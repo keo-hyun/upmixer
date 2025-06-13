@@ -13,7 +13,6 @@ uploaded_file = st.file_uploader("Upload a stereo WAV file", type=["wav"])
 if uploaded_file:
     st.audio(uploaded_file, format='audio/wav')
 
-    # 🔹 파일 이름에서 확장자 제거
     base_filename = os.path.splitext(uploaded_file.name)[0]
     output_filename = f"{base_filename}_upmixed.wav"
     
