@@ -3,6 +3,7 @@ import librosa
 import numpy as np
 import soundfile as sf
 import io
+import os
 from upmix_logic import upmix_and_normalize
 
 st.title("🎧 Stereo to 7.1.4 Upmixer")
@@ -11,6 +12,10 @@ uploaded_file = st.file_uploader("Upload a stereo WAV file", type=["wav"])
 
 if uploaded_file:
     st.audio(uploaded_file, format='audio/wav')
+
+    # 🔹 파일 이름에서 확장자 제거
+    base_filename = os.path.splitext(uploaded_file.name)[0]
+    output_filename = f"{base_filename}_upmixed.wav"
     
     with st.spinner("Loading IR files..."):
         ir_L, _ = librosa.load("Bricasti M7 Room 02 -Studio B Close-L_1.wav", sr=None)
@@ -28,4 +33,4 @@ if uploaded_file:
         buf.seek(0)
 
         st.success("✅ Processing complete!")
-        st.download_button("📥 Download 7.1.4 Upmixed File", buf, file_name="upmixed_7.1.4.wav", mime="audio/wav")
+        st.download_button("📥 Download 7.1.4 Upmixed File", buf, file_name=output_filename, mime="audio/wav")
