@@ -13,8 +13,8 @@ if uploaded_file:
     st.audio(uploaded_file, format='audio/wav')
     
     with st.spinner("Loading IR files..."):
-        ir_L, _ = librosa.load("Bricasti M7 Room 02 -Studio B Close-L.wav", sr=None)
-        ir_R, _ = librosa.load("Bricasti M7 Room 02 -Studio B Close-R.wav", sr=None)
+        ir_L, _ = librosa.load("Bricasti M7 Room 02 -Studio B Close-L_1.wav", sr=None)
+        ir_R, _ = librosa.load("Bricasti M7 Room 02 -Studio B Close-R_1.wav", sr=None)
     
     with st.spinner("Processing upmix and normalization..."):
         y, sr = librosa.load(uploaded_file, sr=None, mono=False)
