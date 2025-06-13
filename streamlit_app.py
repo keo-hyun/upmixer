@@ -8,7 +8,7 @@ from upmix_logic import upmix_and_normalize
 
 st.title("🎧 Stereo to 7.1.4 Upmixer")
 
-uploaded_file = st.file_uploader("Upload a stereo WAV file", type=["wav"])
+uploaded_file = st.file_uploader("Upload a stereo audio file (WAV or MP3)", type=["wav", "mp3"])
 
 if uploaded_file:
     st.audio(uploaded_file, format='audio/wav')
