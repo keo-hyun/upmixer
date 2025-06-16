@@ -51,23 +51,35 @@ def normalize_to_loudness_and_peak(channels, sr, target_loudness=-16.0, max_true
         gain = max_truepeak / truepeak
     return channels * gain
 
-def upmix_and_normalize(y, sr, ir_L, ir_R):
+def upmix_and_normalize(y, sr, ir_L, ir_R, output_format="7.1.4"):
     L, R = y[0], y[1]
     mid = (L + R) / 2
     channels = np.zeros((12, len(mid)))
 
-    channels[0] = L * 0.6
-    channels[1] = R * 0.6
-    channels[2] = mid * 0.1
-    channels[3] = lowpass_filter(mid, sr, 80) * 0.15
-    channels[4] = apply_reverb_mix(L, ir_L, 0.2) * 0.1
-    channels[5] = apply_reverb_mix(R, ir_R, 0.2) * 0.1
-    channels[6] = apply_reverb_mix(highpass_filter(L, sr, 100), ir_L, 0.2) * 0.1
-    channels[7] = apply_reverb_mix(highpass_filter(R, sr, 100), ir_R, 0.2) * 0.1
-    channels[8] = apply_reverb_mix(highpass_filter(L, sr, 150), ir_L, 0.2) * 0.1
-    channels[9] = apply_reverb_mix(highpass_filter(R, sr, 150), ir_R, 0.2) * 0.1
-    channels[10] = apply_reverb_mix(highpass_filter(L, sr, 200), ir_L, 0.2) * 0.05
-    channels[11] = apply_reverb_mix(highpass_filter(R, sr, 200), ir_R, 0.2) * 0.05
+    channels[0] = L * 0.6  # L
+    channels[1] = R * 0.6  # R
+    channels[2] = mid * 0.1  # C
+    channels[3] = lowpass_filter(mid, sr, 80) * 0.15  # LFE
+    channels[4] = apply_reverb_mix(L, ir_L, 0.2) * 0.1  # LS
+    channels[5] = apply_reverb_mix(R, ir_R, 0.2) * 0.1  # RS
+    channels[6] = apply_reverb_mix(highpass_filter(L, sr, 100), ir_L, 0.2) * 0.1  # LRS
+    channels[7] = apply_reverb_mix(highpass_filter(R, sr, 100), ir_R, 0.2) * 0.1  # RRS
+    channels[8] = apply_reverb_mix(highpass_filter(L, sr, 150), ir_L, 0.2) * 0.1  # LTF
+    channels[9] = apply_reverb_mix(highpass_filter(R, sr, 150), ir_R, 0.2) * 0.1  # RTF
+    channels[10] = apply_reverb_mix(highpass_filter(L, sr, 200), ir_L, 0.2) * 0.05  # LTR
+    channels[11] = apply_reverb_mix(highpass_filter(R, sr, 200), ir_R, 0.2) * 0.05  # RTR
 
-    channels_normalized = normalize_to_loudness_and_peak(channels, sr)
+    format_channel_map = {
+        "5.1":     list(range(6)),              # 0~5
+        "5.1.2":   list(range(6)) + [8, 9],     # 0~5 + 8,9
+        "7.1":     list(range(8)),              # 0~7
+        "7.1.2":   list(range(10)),             # 0~9
+        "7.1.4":   list(range(12))              # 0~11
+    }
+
+    selected_channels = format_channel_map.get(output_format, list(range(12)))
+    selected = channels[selected_channels]
+
+    channels_normalized = normalize_to_loudness_and_peak(selected, sr)
     return channels_normalized
+
