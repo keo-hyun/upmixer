@@ -11,6 +11,9 @@ base_dir = os.path.dirname(os.path.dirname(__file__))  # ~/upmixer
 ir_L_path = os.path.join(base_dir, "ir", "ir_left.wav")
 ir_R_path = os.path.join(base_dir, "ir", "ir_right.wav")
 
+print(f"IR LEFT PATH: {ir_L_path}")
+print(f"IR RIGHT PATH: {ir_R_path}")
+
 @app.post("/upload-audio/")
 async def upload_audio(
     file: UploadFile = File(...),
