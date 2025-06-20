@@ -1,12 +1,20 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from upmix_logic import upmix
 import tempfile
 import os
 
 app = FastAPI()
 
-# IR 절대 경로 지정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 base_dir = os.path.dirname(os.path.dirname(__file__))  # ~/upmixer
 ir_L_path = os.path.join(base_dir, "ir", "ir_left.wav")
 ir_R_path = os.path.join(base_dir, "ir", "ir_right.wav")
@@ -25,7 +33,6 @@ async def upload_audio(
 
     output_path = input_path.replace(".wav", f"_{output_format}.wav")
 
-    # 업믹싱 처리
     upmix(input_path, output_path, ir_L_path, ir_R_path, output_format=output_format)
 
     return StreamingResponse(open(output_path, "rb"), media_type="audio/wav")
