@@ -18,8 +18,8 @@ async def upload_audio(
     output_path = input_path.replace(".wav", f"_{output_format}.wav")
 
     # ✅ IR 파일 경로 추가
-    ir_L_path = "../ir/ir_left.wav"
-    ir_R_path = "../ir/ir_right.wav"
+    ir_L_path = "/home/ubuntu/upmixer/ir/ir_left.wav"
+    ir_R_path = "/home/ubuntu/upmixer/ir/ir_right.wav"
 
     # ✅ IR 경로와 함께 업믹스 호출
     upmix(input_path, output_path, ir_L_path, ir_R_path, output_format=output_format)
