@@ -6,6 +6,11 @@ import os
 
 app = FastAPI()
 
+# IR 절대 경로 지정
+base_dir = os.path.dirname(os.path.dirname(__file__))  # ~/upmixer
+ir_L_path = os.path.join(base_dir, "ir", "ir_left.wav")
+ir_R_path = os.path.join(base_dir, "ir", "ir_right.wav")
+
 @app.post("/upload-audio/")
 async def upload_audio(
     file: UploadFile = File(...),
@@ -17,11 +22,7 @@ async def upload_audio(
 
     output_path = input_path.replace(".wav", f"_{output_format}.wav")
 
-    # ✅ IR 파일 경로 추가
-    ir_L_path = "/home/ubuntu/upmixer/ir/ir_left.wav"
-    ir_R_path = "/home/ubuntu/upmixer/ir/ir_right.wav"
-
-    # ✅ IR 경로와 함께 업믹스 호출
+    # 업믹싱 처리
     upmix(input_path, output_path, ir_L_path, ir_R_path, output_format=output_format)
 
     return StreamingResponse(open(output_path, "rb"), media_type="audio/wav")
