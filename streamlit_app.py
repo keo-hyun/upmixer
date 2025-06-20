@@ -4,7 +4,7 @@ import numpy as np
 import soundfile as sf
 import io
 import os
-from upmix_logic_01 import upmix_and_normalize
+from upmix_logic import upmix_and_normalize
 
 output_options = ["5.1", "5.1.2", "7.1", "7.1.2", "7.1.4"]
 selected_format = st.selectbox("Select output format", output_options, index=4)
