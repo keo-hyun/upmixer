@@ -1,43 +1,37 @@
 import streamlit as st
-import librosa
-import numpy as np
-import soundfile as sf
+import requests
 import io
-import os
-from upmix_logic import upmix_and_normalize
 
-output_options = ["5.1", "5.1.2", "7.1", "7.1.2", "7.1.4"]
-selected_format = st.selectbox("Select output format", output_options, index=4)
+# FastAPI 서버 주소 (퍼블릭 IP 기반)
+API_URL = "http://16.176.222.198:8001/upload-audio/"
 
 st.title("🎧 Stereo to Multi-Channel Upmixer")
 
+# 출력 포맷 선택
+output_options = ["5.1", "5.1.2", "7.1", "7.1.2", "7.1.4"]
+selected_format = st.selectbox("Select output format", output_options, index=4)
+
+# 오디오 업로드
 uploaded_file = st.file_uploader("Upload a stereo audio file (WAV or MP3)", type=["wav", "mp3"])
 
 if uploaded_file:
     st.audio(uploaded_file, format='audio/wav')
 
-    base_filename = os.path.splitext(uploaded_file.name)[0]
-    output_filename = f"{base_filename}_{selected_format}_upmixed.wav"
-    
-    with st.spinner("Loading IR files..."):
-        ir_L, _ = librosa.load("Bricasti M7 Room 02 -Studio B Close-L_1.wav", sr=None)
-        ir_R, _ = librosa.load("Bricasti M7 Room 02 -Studio B Close-R_1.wav", sr=None)
-    
-    with st.spinner("Processing upmix and normalization..."):
-        y, sr = librosa.load(uploaded_file, sr=None, mono=False)
-        if y.ndim == 1:
-            y = np.vstack((y, y))
+    if st.button("🚀 Start Upmixing"):
+        with st.spinner("Sending to server for processing..."):
+            files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
+            data = {"output_format": selected_format}
 
-        output = upmix_and_normalize(y, sr, ir_L, ir_R, output_format=selected_format)
-        
-        buf = io.BytesIO()
-        sf.write(buf, output.T, sr, format='WAV', subtype='PCM_24')
-        buf.seek(0)
+            try:
+                response = requests.post(API_URL, files=files, data=data)
+                response.raise_for_status()
 
-        st.success("✅ Processing complete!")
-        st.download_button(
-            label=f"📥 Download {selected_format} Upmixed File",
-            data=buf,
-            file_name=output_filename,
-            mime="audio/wav"
-        )
+                st.success("✅ Processing complete!")
+                st.download_button(
+                    label=f"📥 Download {selected_format} Upmixed File",
+                    data=response.content,
+                    file_name=f"{uploaded_file.name.rsplit('.', 1)[0]}_{selected_format}.wav",
+                    mime="audio/wav"
+                )
+            except requests.exceptions.RequestException as e:
+                st.error(f"❌ Server error: {e}")
