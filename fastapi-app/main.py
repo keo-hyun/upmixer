@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from upmix_logic import upmix
 import tempfile
 import os
+from scipy.io import wavfile
 
 app = FastAPI()
 
@@ -19,6 +20,10 @@ base_dir = os.path.dirname(os.path.dirname(__file__))  # ~/upmixer
 ir_L_path = os.path.join(base_dir, "ir", "ir_left.wav")
 ir_R_path = os.path.join(base_dir, "ir", "ir_right.wav")
 
+
+ir_L_sr, ir_L = wavfile.read(ir_L_path)
+ir_R_sr, ir_R = wavfile.read(ir_R_path)
+
 print(f"IR LEFT PATH: {ir_L_path}")
 print(f"IR RIGHT PATH: {ir_R_path}")
 
@@ -33,6 +38,6 @@ async def upload_audio(
 
     output_path = input_path.replace(".wav", f"_{output_format}.wav")
 
-    upmix(input_path, output_path, ir_L_path, ir_R_path, output_format=output_format)
+    upmix(input_path, output_path, ir_L, ir_R, ir_L_sr, output_format=output_format)
 
     return StreamingResponse(open(output_path, "rb"), media_type="audio/wav")
