@@ -79,12 +79,15 @@ def upmix_and_normalize(y, sr, ir_L, ir_R, output_format="7.1.4"):
     normalized = normalize_by_truepeak(selected_channels, sr)
     return normalized
 
-def upmix(input_path: str, output_path: str, ir_L_path: str, ir_R_path: str, output_format: str = "7.1.4"):
+def upmix(input_path: str, output_path: str, ir_L: np.ndarray, ir_R: np.ndarray, ir_sr: int, output_format: str = "7.1.4"):
     y, sr = librosa.load(input_path, sr=None, mono=False)
     if y.ndim != 2 or y.shape[0] != 2:
         raise ValueError("Input file must be a stereo WAV file.")
-    ir_L, _ = librosa.load(ir_L_path, sr=sr)
-    ir_R, _ = librosa.load(ir_R_path, sr=sr)
+
+    if sr != ir_sr:
+        ir_L = librosa.resample(ir_L, orig_sr=ir_sr, target_sr=sr)
+        ir_R = librosa.resample(ir_R, orig_sr=ir_sr, target_sr=sr)
+        ir_sr = sr
 
     upmixed = upmix_and_normalize(y, sr, ir_L, ir_R, output_format=output_format)
     sf.write(output_path, upmixed.T, sr)
