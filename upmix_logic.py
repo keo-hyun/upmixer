@@ -2,7 +2,7 @@ import numpy as np
 import librosa
 import soundfile as sf
 import pyloudnorm as pyln
-from scipy.signal import butter, sosfilt, fftconvolve, resample_poly
+from scipy.signal import butter, sosfilt, oaconvolve, resample_poly
 
 def highpass_filter(signal, sr, cutoff_freq):
     sos = butter(4, cutoff_freq, btype='highpass', fs=sr, output='sos')
@@ -14,7 +14,7 @@ def lowpass_filter(signal, sr, cutoff_freq):
 
 def apply_reverb_mix(signal, ir, wet_ratio=0.2):
     dry_ratio = 1.0 - wet_ratio
-    wet = fftconvolve(signal, ir, mode='full')[:len(signal)]
+    wet = oaconvolve(signal, ir, mode='full', method='fft')[:len(signal)]
     return dry_ratio * signal + wet_ratio * wet
 
 def loudness_filter(signal, sr):
@@ -28,7 +28,7 @@ declare_channel_weights = lambda: {
 }
 channel_weights = declare_channel_weights()
 
-def true_peak(signal, oversample=4):
+def true_peak(signal, oversample=2):  # oversample=4 → 2로 최적화
     upsampled = resample_poly(signal, up=oversample, down=1)
     return np.max(np.abs(upsampled))
 
@@ -80,14 +80,13 @@ def upmix_and_normalize(y, sr, ir_L, ir_R, output_format="7.1.4"):
     return normalized
 
 def upmix(input_path: str, output_path: str, ir_L: np.ndarray, ir_R: np.ndarray, ir_sr: int, output_format: str = "7.1.4"):
-    y, sr = librosa.load(input_path, sr=None, mono=False)
+    y, sr = librosa.load(input_path, sr=None, mono=False, dtype=np.float32)  # A. dtype 추가
     if y.ndim != 2 or y.shape[0] != 2:
         raise ValueError("Input file must be a stereo WAV file.")
 
-    if sr != ir_sr:
-        ir_L = librosa.resample(ir_L, orig_sr=ir_sr, target_sr=sr)
-        ir_R = librosa.resample(ir_R, orig_sr=ir_sr, target_sr=sr)
-        ir_sr = sr
+    if ir_sr != sr:
+        ir_L = librosa.resample(ir_L.astype(np.float32), orig_sr=ir_sr, target_sr=sr)
+        ir_R = librosa.resample(ir_R.astype(np.float32), orig_sr=ir_sr, target_sr=sr)
 
     upmixed = upmix_and_normalize(y, sr, ir_L, ir_R, output_format=output_format)
     sf.write(output_path, upmixed.T, sr)
