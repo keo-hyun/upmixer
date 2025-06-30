@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import librosa
 import soundfile as sf
@@ -63,14 +64,23 @@ def upmix_and_normalize(y, sr, ir_L, ir_R, output_format="7.1.4"):
     return normalize_truepeak(selected_channels)
 
 # ---------------- 전체 실행 ----------------
-def upmix(input_path: str, output_path: str, ir_L: np.ndarray, ir_R: np.ndarray, ir_sr: int, output_format: str = "7.1.4"):
+def upmix(input_path, output_path, ir_L, ir_R, ir_sr, output_format="7.1.4"):
+    logging.info(f"[UPMIX] 시작 - input: {input_path}, format: {output_format}")
+    
+    # load
     y, sr = librosa.load(input_path, sr=None, mono=False, dtype=np.float32)
     if y.ndim != 2 or y.shape[0] != 2:
-        raise ValueError("Input file must be a stereo WAV file.")
+        raise ValueError("Input file must be stereo")
 
+    # resample IR
     if ir_sr != sr:
-        ir_L = librosa.resample(ir_L.astype(np.float32), orig_sr=ir_sr, target_sr=sr)
-        ir_R = librosa.resample(ir_R.astype(np.float32), orig_sr=ir_sr, target_sr=sr)
+        logging.info(f"[UPMIX] IR resample: {ir_sr} → {sr}")
+        ir_L = librosa.resample(ir_L.astype(np.float32), ir_sr, sr)
+        ir_R = librosa.resample(ir_R.astype(np.float32), ir_sr, sr)
 
+    # process
     upmixed = upmix_and_normalize(y, sr, ir_L, ir_R, output_format=output_format)
+
+    # save
     sf.write(output_path, upmixed.T, sr)
+    logging.info(f"[UPMIX] 완료 - output saved to: {output_path}")
