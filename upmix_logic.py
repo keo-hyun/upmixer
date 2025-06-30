@@ -1,4 +1,5 @@
 import logging
+import time
 import numpy as np
 import librosa
 import soundfile as sf
@@ -65,22 +66,22 @@ def upmix_and_normalize(y, sr, ir_L, ir_R, output_format="7.1.4"):
 
 # ---------------- 전체 실행 ----------------
 def upmix(input_path, output_path, ir_L, ir_R, ir_sr, output_format="7.1.4"):
-    logging.info(f"[UPMIX] 시작 - input: {input_path}, format: {output_format}")
-    
-    # load
-    y, sr = librosa.load(input_path, sr=None, mono=False, dtype=np.float32)
-    if y.ndim != 2 or y.shape[0] != 2:
-        raise ValueError("Input file must be stereo")
+    start = time.time()
+    logging.info(f"[UPMIX] Started for format {output_format}")
 
-    # resample IR
+    y, sr = librosa.load(input_path, sr=None, mono=False, dtype=np.float32)
+    logging.info(f"[LOAD] Audio loaded - shape: {y.shape}")
+
     if ir_sr != sr:
-        logging.info(f"[UPMIX] IR resample: {ir_sr} → {sr}")
         ir_L = librosa.resample(ir_L.astype(np.float32), ir_sr, sr)
         ir_R = librosa.resample(ir_R.astype(np.float32), ir_sr, sr)
+        logging.info(f"[IR] Resampled IR from {ir_sr} to {sr}")
 
-    # process
+    t1 = time.time()
     upmixed = upmix_and_normalize(y, sr, ir_L, ir_R, output_format=output_format)
+    t2 = time.time()
+    logging.info(f"[PROCESS] Upmixing + normalization took {t2 - t1:.2f} sec")
 
-    # save
     sf.write(output_path, upmixed.T, sr)
-    logging.info(f"[UPMIX] 완료 - output saved to: {output_path}")
+    total = time.time() - start
+    logging.info(f"[DONE] Output written: {output_path} (total {total:.2f} sec)")
