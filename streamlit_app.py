@@ -1,10 +1,18 @@
+import logging
 import streamlit as st
 import requests
 import io
 
+# 로깅 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] [streamlit] %(message)s"
+)
+
 # FastAPI 서버 주소 (퍼블릭 IP 기반)
 API_URL = "http://16.176.222.198:8001/upload-audio/"
 
+# 앱 제목
 st.title("🎧 Stereo to Multi-Channel Upmixer")
 
 # 출력 포맷 선택
@@ -19,12 +27,20 @@ if uploaded_file:
 
     if st.button("🚀 Start Upmixing"):
         with st.spinner("Sending to server for processing..."):
-            files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
-            data = {"output_format": selected_format}
+            files = {
+                "file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)
+            }
+            data = {
+                "output_format": selected_format
+            }
+
+            logging.info(f"[REQ] Uploading {uploaded_file.name} with format {selected_format} to FastAPI")
 
             try:
                 response = requests.post(API_URL, files=files, data=data)
                 response.raise_for_status()
+
+                logging.info("[RESP] Received upmixed file from server")
 
                 st.success("✅ Processing complete!")
                 st.download_button(
@@ -34,4 +50,5 @@ if uploaded_file:
                     mime="audio/wav"
                 )
             except requests.exceptions.RequestException as e:
+                logging.error(f"[ERROR] Request failed: {e}")
                 st.error(f"❌ Server error: {e}")
